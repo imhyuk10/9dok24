@@ -26,6 +26,14 @@ Migrez vos abonnements YouTube d'un compte Google à un autre — rapidement, s�
 
 ---
 
+## Capture d'écran
+
+![9dok24 migration en cours](public/screenshot.png)
+
+*Migration de 297 abonnements — 59 transférés, jauge de quota API visible en en-tête.*
+
+---
+
 ## Démarrage
 
 ### 1. Configuration Google Cloud (obligatoire)

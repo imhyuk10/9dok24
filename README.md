@@ -26,6 +26,14 @@ Migrate your YouTube subscriptions from one Google account to another — fast, 
 
 ---
 
+## Screenshot
+
+![9dok24 migration in progress](public/screenshot.png)
+
+*Migrating 297 subscriptions — 59 transferred, real-time API quota gauge visible in the header.*
+
+---
+
 ## Getting Started
 
 ### 1. Google Cloud Setup (required)
