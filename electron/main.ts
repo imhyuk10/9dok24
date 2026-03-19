@@ -262,6 +262,27 @@ async function migrateSubscriptions(
   return { done: true };
 }
 
+// ── Quota 파일 (userData/quota.json) ─────────────────────────────────────────────
+function quotaPath(): string {
+  return path.join(app.getPath("userData"), "quota.json");
+}
+
+function todayStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function loadQuotaFile(): { date: string; inserts: number } {
+  try {
+    return JSON.parse(fs.readFileSync(quotaPath(), "utf-8"));
+  } catch {
+    return { date: "", inserts: 0 };
+  }
+}
+
+function saveQuotaFile(inserts: number) {
+  fs.writeFileSync(quotaPath(), JSON.stringify({ date: todayStr(), inserts }, null, 2));
+}
+
 // ── IPC ──────────────────────────────────────────────────────────────────────────
 function registerIPC() {
   ipcMain.handle("config:check", () => {
@@ -321,6 +342,18 @@ function registerIPC() {
   ipcMain.handle("migrate:start", (event, { token, channelIds }: { token: string; channelIds: string[] }) =>
     migrateSubscriptions(event, token, channelIds)
   );
+
+  ipcMain.handle("quota:load", () => {
+    const data = loadQuotaFile();
+    return { inserts: data.date === todayStr() ? data.inserts : 0 };
+  });
+
+  ipcMain.handle("quota:add", (_e, count: number) => {
+    const data = loadQuotaFile();
+    const inserts = (data.date === todayStr() ? data.inserts : 0) + count;
+    saveQuotaFile(inserts);
+    return { inserts };
+  });
 }
 
 // ── 프로덕션 정적 파일 서버 (포트 18235) ─────────────────────────────────────────
