@@ -32,6 +32,52 @@ function FlagGB({ className }: { className?: string }) {
   );
 }
 
+function FlagFR({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 60 30" className={className}>
+      <rect fill="#002395" width="20" height="30" />
+      <rect fill="#FFFFFF" x="20" width="20" height="30" />
+      <rect fill="#ED2939" x="40" width="20" height="30" />
+    </svg>
+  );
+}
+
+function FlagCN({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 30 20" className={className}>
+      <rect fill="#DE2910" width="30" height="20" />
+      <polygon fill="#FFDE00" points="5,2 6.2,5.8 10,5.8 7,8 8.2,11.8 5,9.5 1.8,11.8 3,8 0,5.8 3.8,5.8" />
+      <polygon fill="#FFDE00" points="11,1 11.8,3.4 14.2,3.4 12.2,4.9 13,7.3 11,5.8 9,7.3 9.8,4.9 7.8,3.4 10.2,3.4" transform="rotate(25,11,4)" />
+      <polygon fill="#FFDE00" points="14,4 14.8,6.4 17.2,6.4 15.2,7.9 16,10.3 14,8.8 12,10.3 12.8,7.9 10.8,6.4 13.2,6.4" transform="rotate(-25,14,7)" />
+      <polygon fill="#FFDE00" points="14,8 14.8,10.4 17.2,10.4 15.2,11.9 16,14.3 14,12.8 12,14.3 12.8,11.9 10.8,10.4 13.2,10.4" transform="rotate(25,14,11)" />
+      <polygon fill="#FFDE00" points="11,11 11.8,13.4 14.2,13.4 12.2,14.9 13,17.3 11,15.8 9,17.3 9.8,14.9 7.8,13.4 10.2,13.4" transform="rotate(-25,11,14)" />
+    </svg>
+  );
+}
+
+function FlagJP({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 30 20" className={className}>
+      <rect fill="#FFFFFF" width="30" height="20" />
+      <circle cx="15" cy="10" r="6" fill="#BC002D" />
+    </svg>
+  );
+}
+
+type LangOption = {
+  code: "ko" | "en" | "fr" | "zh" | "ja";
+  label: string;
+  Flag: ({ className }: { className?: string }) => JSX.Element;
+};
+
+const LANG_OPTIONS: LangOption[] = [
+  { code: "ko", label: "한국어", Flag: FlagKR },
+  { code: "en", label: "EN",    Flag: FlagGB },
+  { code: "fr", label: "FR",    Flag: FlagFR },
+  { code: "zh", label: "中文",  Flag: FlagCN },
+  { code: "ja", label: "日本語", Flag: FlagJP },
+];
+
 export default function SettingsPopover({ onApiSettings, onLogout }: SettingsPopoverProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -115,29 +161,22 @@ export default function SettingsPopover({ onApiSettings, onLogout }: SettingsPop
               {/* 언어 */}
               <div className="px-3 py-2">
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{t("settingsMenu.language")}</p>
-                <div className="flex gap-1 bg-secondary/50 rounded-lg p-1">
-                  <button
-                    onClick={() => setLang("ko")}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-all ${
-                      lang === "ko"
-                        ? "bg-card text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <FlagKR className="w-4 h-3 rounded-sm overflow-hidden" />
-                    한국어
-                  </button>
-                  <button
-                    onClick={() => setLang("en")}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-all ${
-                      lang === "en"
-                        ? "bg-card text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <FlagGB className="w-4 h-3 rounded-sm overflow-hidden" />
-                    English
-                  </button>
+                <div className="grid grid-cols-5 gap-1 bg-secondary/50 rounded-lg p-1">
+                  {LANG_OPTIONS.map(({ code, label, Flag }) => (
+                    <button
+                      key={code}
+                      onClick={() => setLang(code)}
+                      title={label}
+                      className={`flex flex-col items-center gap-1 py-1.5 rounded-md text-[10px] font-medium transition-all ${
+                        lang === code
+                          ? "bg-card text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Flag className="w-5 h-3.5 rounded-[2px] overflow-hidden" />
+                      {label}
+                    </button>
+                  ))}
                 </div>
               </div>
 

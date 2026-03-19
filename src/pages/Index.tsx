@@ -99,6 +99,7 @@ export default function Index() {
         return;
       }
       await window.electronAPI.saveConfig(inputClientId.trim(), inputClientSecret.trim());
+      setQuotaUsed(0);
       setConfigured(true);
     } catch {
       setError(t("settings.saveFail"));
@@ -246,6 +247,8 @@ export default function Index() {
       }
       if (data.quotaExceeded) {
         setQuotaExceeded(true);
+        setQuotaUsed(DAILY_MAX * 50);
+        window.electronAPI.setQuota(DAILY_MAX).catch(() => {});
         setError(t("transfer.quotaExceeded"));
       }
     });
@@ -547,7 +550,8 @@ export default function Index() {
                   current={migCurrent}
                   total={migTotal}
                   isActive={view === "migrating"}
-                  apiRemaining={DAILY_MAX - quotaInserts}
+                  quotaUsed={quotaInserts}
+                  quotaMax={DAILY_MAX}
                   failedCount={failedCount}
                 />
               )}

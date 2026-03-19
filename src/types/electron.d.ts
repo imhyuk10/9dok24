@@ -22,6 +22,7 @@ interface ElectronAPI {
   onMigrateProgress(cb: (data: MigrateProgress) => void): () => void;
   loadQuota(): Promise<{ inserts: number }>;
   addQuota(count: number): Promise<{ inserts: number }>;
+  setQuota(inserts: number): Promise<{ inserts: number }>;
 }
 
 declare interface Window {

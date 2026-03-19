@@ -292,6 +292,7 @@ function registerIPC() {
 
   ipcMain.handle("config:save", (_e, { clientId, clientSecret }: { clientId: string; clientSecret: string }) => {
     saveCredentials(clientId, clientSecret);
+    saveQuotaFile(0); // API 자격증명 변경 시 quota 초기화
     return { ok: true };
   });
 
@@ -351,6 +352,11 @@ function registerIPC() {
   ipcMain.handle("quota:add", (_e, count: number) => {
     const data = loadQuotaFile();
     const inserts = (data.date === todayStr() ? data.inserts : 0) + count;
+    saveQuotaFile(inserts);
+    return { inserts };
+  });
+
+  ipcMain.handle("quota:set", (_e, inserts: number) => {
     saveQuotaFile(inserts);
     return { inserts };
   });

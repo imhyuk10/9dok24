@@ -21,4 +21,5 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
   loadQuota: () => ipcRenderer.invoke("quota:load"),
   addQuota: (count: number) => ipcRenderer.invoke("quota:add", count),
+  setQuota: (inserts: number) => ipcRenderer.invoke("quota:set", inserts),
 });
