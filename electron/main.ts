@@ -163,6 +163,8 @@ async function doOAuth(scope: string, role: "source" | "dest") {
   );
   if (!chResp.ok) {
     const errData = await chResp.json().catch(() => null) as any;
+    const reason = errData?.error?.errors?.[0]?.reason ?? "";
+    if (reason === "accountSuspended") throw new Error("error:accountSuspended");
     const msg = errData?.error?.message ?? `HTTP ${chResp.status}`;
     console.error("[channels]", chResp.status, msg);
     throw new Error(`채널 정보 조회 실패: ${msg}`);
@@ -201,6 +203,8 @@ async function fetchSubscriptions(token: string) {
 
     if (!resp.ok) {
       const err = await resp.json() as any;
+      const reason = err?.error?.errors?.[0]?.reason ?? "";
+      if (reason === "accountSuspended") throw new Error("error:accountSuspended");
       throw new Error(err?.error?.message ?? "구독 목록 조회 실패");
     }
 
@@ -248,6 +252,7 @@ async function migrateSubscriptions(
         const reason = err?.error?.errors?.[0]?.reason ?? "";
         if (reason === "subscriptionDuplicate") result = "already";
         else if (reason === "quotaExceeded" || resp.status === 429) { result = "quota"; quotaExceeded = true; }
+        else if (reason === "accountSuspended") { result = "accountSuspended"; quotaExceeded = true; }
         else result = "fail";
       }
     } catch {

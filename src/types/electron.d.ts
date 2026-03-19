@@ -2,7 +2,7 @@ interface MigrateProgress {
   current: number;
   total: number;
   channelId: string;
-  result: "ok" | "already" | "quota" | "fail";
+  result: "ok" | "already" | "quota" | "accountSuspended" | "fail";
   quotaExceeded: boolean;
 }
 

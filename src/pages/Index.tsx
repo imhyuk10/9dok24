@@ -17,8 +17,18 @@ type View = "idle" | "subscriptions" | "transfer" | "migrating" | "done";
 interface Account { token: string; email: string; name: string; picture: string; }
 interface Sub { channelId: string; title: string; thumbnail: string; status: ChannelStatus; }
 
+function useMapError() {
+  const { t } = useI18n();
+  return (e: unknown): string => {
+    const msg = e instanceof Error ? e.message : "";
+    if (msg === "error:accountSuspended") return t("error.accountSuspended");
+    return msg || t("transfer.error");
+  };
+}
+
 export default function Index() {
   const { t } = useI18n();
+  const mapError = useMapError();
 
   // 저장된 테마 초기 적용
   useEffect(() => {
@@ -116,7 +126,7 @@ export default function Index() {
       const acc = await window.electronAPI.loginSource();
       setAccount(acc);
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("login.failed"));
+      setError(mapError(e));
     } finally {
       setLoggingIn(false);
     }
@@ -146,7 +156,7 @@ export default function Index() {
       setSelectedIds(new Set(subs.map((s) => s.channelId)));
       setView("subscriptions");
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("subs.fetchFail"));
+      setError(mapError(e));
     } finally {
       setFetching(false);
     }
@@ -163,7 +173,7 @@ export default function Index() {
       }
       setDestAccount(acc);
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("transfer.destLoginFail"));
+      setError(mapError(e));
     } finally {
       setLoggingInDest(false);
     }
@@ -237,6 +247,9 @@ export default function Index() {
     unsubRef.current = window.electronAPI.onMigrateProgress((data) => {
       const status: ChannelStatus =
         data.result === "ok" || data.result === "already" ? "migrated" : "failed";
+      if (data.result === "accountSuspended") {
+        setError(t("error.accountSuspended"));
+      }
       setSubscriptions((prev) =>
         prev.map((s) => s.channelId === data.channelId ? { ...s, status } : s)
       );

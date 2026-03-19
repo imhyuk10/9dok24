@@ -453,6 +453,13 @@ const translations = {
     zh: "Client ID 或 Secret 无效。",
     ja: "Client IDまたはSecretが正しくありません。",
   },
+  "error.accountSuspended": {
+    ko: "이 YouTube 계정은 영구 정지된 상태입니다. Google 고객센터에 문의하세요.",
+    en: "This YouTube account has been permanently suspended. Please contact Google Support.",
+    fr: "Ce compte YouTube a été définitivement suspendu. Veuillez contacter le support Google.",
+    zh: "该 YouTube 账户已被永久封禁，请联系 Google 客服。",
+    ja: "このYouTubeアカウントは永久停止されています。Googleサポートにお問い合わせください。",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
