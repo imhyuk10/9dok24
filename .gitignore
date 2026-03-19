@@ -35,6 +35,7 @@ main.js
 
 # Claude Code settings (may contain sensitive data)
 .claude/
+CLAUDE.md
 
 # Binary lockfile (text bun.lock is sufficient)
 bun.lockb

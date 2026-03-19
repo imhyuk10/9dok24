@@ -14,7 +14,7 @@
 
 ---
 
-Migrate your YouTube subscriptions from one Google account to another — fast, selectively, and with real-time API quota tracking.
+Migrate your YouTube subscriptions from one Google account to another — fast, selectively, and with a built-in API quota gauge.
 
 ---
 
@@ -23,7 +23,7 @@ Migrate your YouTube subscriptions from one Google account to another — fast, 
 - **Fetch subscriptions** — Load all subscribed channels from the source account.
 - **Selective transfer** — Search channels and pick only the ones you want to move.
 - **Duplicate-aware** — Channels already subscribed in the destination are skipped automatically.
-- **API quota gauge** — Displays remaining daily YouTube Data API inserts (200/day limit) in real time.
+- **API quota gauge** — Shows the app's tracked daily YouTube Data API inserts against the 200/day limit.
 - **JSON export** — Save your subscription list as a JSON file.
 - **Dark / Light theme** — Toggle in-app at any time.
 - **Korean / English** — Full UI localisation for both languages.
@@ -34,7 +34,7 @@ Migrate your YouTube subscriptions from one Google account to another — fast, 
 
 ![9dok24 migration in progress](public/screenshot.png)
 
-*Migrating 297 subscriptions — 59 transferred, real-time API quota gauge visible in the header.*
+*Migrating 297 subscriptions — 59 transferred, with the API quota gauge visible in the header.*
 
 ---
 

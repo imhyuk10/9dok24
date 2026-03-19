@@ -10,7 +10,7 @@
 
 ---
 
-Migrez vos abonnements YouTube d'un compte Google à un autre — rapidement, sélectivement, avec un suivi du quota API en temps réel.
+Migrez vos abonnements YouTube d'un compte Google à un autre — rapidement, sélectivement, avec une jauge de quota API intégrée.
 
 ---
 
@@ -19,7 +19,7 @@ Migrez vos abonnements YouTube d'un compte Google à un autre — rapidement, s�
 - **Récupération des abonnements** — Chargez toutes les chaînes du compte source.
 - **Transfert sélectif** — Recherchez et choisissez uniquement les chaînes à migrer.
 - **Déduplication automatique** — Les chaînes déjà abonnées sur le compte destination sont ignorées.
-- **Jauge de quota API** — Affiche les insertions YouTube Data API restantes (limite 200/jour) en temps réel.
+- **Jauge de quota API** — Affiche le nombre d'insertions YouTube Data API suivi par l'application par rapport à la limite de 200/jour.
 - **Export JSON** — Enregistrez votre liste d'abonnements en fichier JSON.
 - **Thème sombre / clair** — Basculez à tout moment depuis l'application.
 - **Coréen / Anglais** — Interface entièrement localisée dans ces deux langues.
@@ -30,7 +30,7 @@ Migrez vos abonnements YouTube d'un compte Google à un autre — rapidement, s�
 
 ![9dok24 migration en cours](public/screenshot.png)
 
-*Migration de 297 abonnements — 59 transférés, jauge de quota API visible en en-tête.*
+*Migration de 297 abonnements — 59 transférés, avec la jauge de quota API visible en en-tête.*
 
 ---
 
