@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 480px; height: 280px;
+  background: linear-gradient(135deg, #0d0f14 0%, #151820 50%, #1a1020 100%);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  overflow: hidden; user-select: none; -webkit-app-region: drag;
+  position: relative;
+}
+
+/* Ambient glow */
+body::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px; height: 200px;
+  background: radial-gradient(ellipse, rgba(200, 30, 80, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.logo-area {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  position: relative; z-index: 1;
+}
+
+.brand {
+  font-size: 42px; font-weight: 900; letter-spacing: -1px;
+  text-transform: uppercase; color: #f5f5f5;
+}
+.brand span { color: #c81e50; }
+
+.tagline {
+  font-size: 11px; font-weight: 700; letter-spacing: 4px;
+  text-transform: uppercase; color: rgba(255,255,255,0.35);
+}
+
+.loader {
+  margin-top: 28px;
+  width: 120px; height: 2px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px; overflow: hidden;
+  position: relative; z-index: 1;
+}
+.loader-bar {
+  width: 40%; height: 100%;
+  background: linear-gradient(90deg, transparent, #c81e50, transparent);
+  border-radius: 2px;
+  animation: slide 1.2s ease-in-out infinite;
+}
+
+.version {
+  position: absolute; bottom: 14px; right: 20px;
+  font-size: 10px; color: rgba(255,255,255,0.2);
+  font-weight: 500; letter-spacing: 1px;
+}
+
+@keyframes slide {
+  0% { transform: translateX(-120px); }
+  100% { transform: translateX(300px); }
+}
+</style>
+</head>
+<body>
+  <div class="logo-area">
+    <div class="brand">9dok<span>24</span></div>
+    <div class="tagline">YouTube Subscription Migration</div>
+  </div>
+  <div class="loader"><div class="loader-bar"></div></div>
+  <div class="version">v1.0.0</div>
+</body>
+</html>
