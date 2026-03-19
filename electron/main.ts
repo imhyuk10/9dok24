@@ -465,11 +465,8 @@ function createWindow() {
 
   if (isDev) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL || "http://localhost:8080");
-    mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadURL(`http://127.0.0.1:${STATIC_PORT}`);
-    // 디버깅을 위해 운영 모드에서도 개발자 도구를 엽니다.
-    mainWindow.webContents.openDevTools();
   }
 
   let isMainShown = false;
@@ -501,11 +498,11 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
-  appStartTime = Date.now();
   registerIPC();
   if (!isDev) {
     await startStaticServer().catch((e) => console.error("[static-server]", e));
   }
+  appStartTime = Date.now();
   createSplash();
   createWindow();
 });
