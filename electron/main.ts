@@ -146,7 +146,9 @@ async function doOAuth(scope: string, role: "source" | "dest") {
     code_challenge: challenge,
     code_challenge_method: "S256",
     access_type: "offline",
-    prompt: "select_account",
+    // consent 포함: 매번 동의 화면을 띄워 refresh_token 발급을 보장
+    // (select_account 단독 사용 시 이미 승인한 계정은 refresh_token 미발급)
+    prompt: "consent",
   });
 
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
@@ -219,6 +221,8 @@ async function doOAuth(scope: string, role: "source" | "dest") {
   // 세션 저장 (refresh_token이 있을 때만)
   if (refreshToken) {
     saveSession(role, { refreshToken, email, name, picture });
+  } else if (!loadSession(role)) {
+    console.warn(`[oauth:${role}] refresh_token 미수신 — 세션 갱신 불가 (이미 승인된 계정일 수 있음)`);
   }
 
   return { token: accessToken, email, name, picture };
@@ -342,16 +346,24 @@ function registerIPC() {
 
   // 설정값 유효성 검증
   ipcMain.handle("config:validate", async (_e, { clientId, clientSecret }: { clientId: string; clientSecret: string }) => {
+    // 1) 형식 사전 검사
+    if (!clientId.includes(".apps.googleusercontent.com")) {
+      return { valid: false, reason: "error:invalidClientIdFormat" };
+    }
+    if (!clientSecret.startsWith("GOCSPX-")) {
+      return { valid: false, reason: "error:invalidClientSecretFormat" };
+    }
+    // 2) Client ID 존재 여부 (Secret 실제 유효성은 첫 로그인 시점에 검증됨)
     try {
-      const resp = await fetch(`https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&response_type=code&scope=openid&redirect_uri=http://127.0.0.1:18234/oauth/callback`);
+      const resp = await fetch(`https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&response_type=code&scope=openid&redirect_uri=http://127.0.0.1:${OAUTH_PORT}/oauth/callback`);
       if (resp.status === 400) {
         const text = await resp.text();
-        if (text.includes("invalid_client")) return { valid: false, reason: "Client ID가 올바르지 않습니다." };
+        if (text.includes("invalid_client")) return { valid: false, reason: "error:invalidClientId" };
       }
-      return { valid: true };
     } catch {
-      return { valid: false, reason: "연결 실패" };
+      return { valid: false, reason: "error:connectionFailed" };
     }
+    return { valid: true };
   });
 
   ipcMain.handle("auth:source", () =>
