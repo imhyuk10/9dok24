@@ -64,7 +64,7 @@ export default function Index() {
 
   const migratedCount = subscriptions.filter((c) => c.status === "migrated").length;
   const failedCount = subscriptions.filter((c) => c.status === "failed").length;
-  const quotaInserts = Math.floor(quotaUsed / 50);
+  // quotaUsed 는 항상 inserts(횟수) 단위로 통일. 표시 시 ×50 units 로 환산.
   const DAILY_MAX = 200;
 
   // ── 초기 설정 확인 + 세션 복원 ──────────────────────────────────────────
@@ -82,7 +82,7 @@ export default function Index() {
         // 저장된 quota 로드 (날짜 다르면 자동 0)
         try {
           const q = await window.electronAPI.loadQuota();
-          setQuotaUsed(q.inserts * 50);
+          setQuotaUsed(q.inserts);
         } catch { /* ignore */ }
         if (!r.configured) return;
         // 저장된 소스 세션 복원 시도
@@ -255,12 +255,12 @@ export default function Index() {
       );
       setMigCurrent(data.current);
       if (data.result === "ok") {
-        setQuotaUsed((q) => q + 50);
+        setQuotaUsed((q) => q + 1);
         window.electronAPI.addQuota(1).catch(() => {});
       }
       if (data.quotaExceeded) {
         setQuotaExceeded(true);
-        setQuotaUsed(DAILY_MAX * 50);
+        setQuotaUsed(DAILY_MAX);
         window.electronAPI.setQuota(DAILY_MAX).catch(() => {});
         setError(t("transfer.quotaExceeded"));
       }
@@ -431,7 +431,7 @@ export default function Index() {
           <BrandLogo size={32} />
           
           <div className="flex items-center gap-3">
-            <APIQuotaGauge used={quotaInserts} total={DAILY_MAX} />
+            <APIQuotaGauge used={quotaUsed} total={DAILY_MAX} />
             <div className="flex items-center gap-2 pl-3 border-l border-border">
               <div className="w-8 h-8 rounded-full bg-secondary border-2 border-primary/20 overflow-hidden shadow-inner">
                 {account.picture ? (
@@ -563,7 +563,7 @@ export default function Index() {
                   current={migCurrent}
                   total={migTotal}
                   isActive={view === "migrating"}
-                  quotaUsed={quotaInserts}
+                  quotaUsed={quotaUsed}
                   quotaMax={DAILY_MAX}
                   failedCount={failedCount}
                 />
