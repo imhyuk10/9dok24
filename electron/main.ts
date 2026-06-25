@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, ipcMain } from "electron";
+import { app, BrowserWindow, shell, ipcMain, safeStorage } from "electron";
 import { createHash, randomBytes } from "crypto";
 import http from "http";
 import path from "path";
@@ -15,19 +15,16 @@ function configPath(): string {
 }
 
 function loadCredentials(): { clientId: string; clientSecret: string } {
-  try {
-    const data = JSON.parse(fs.readFileSync(configPath(), "utf-8"));
-    return {
-      clientId: data.clientId?.trim() ?? "",
-      clientSecret: data.clientSecret?.trim() ?? "",
-    };
-  } catch {
-    return { clientId: "", clientSecret: "" };
-  }
+  const data = readSecureJSON(configPath());
+  if (!data) return { clientId: "", clientSecret: "" };
+  return {
+    clientId: (data.clientId as string)?.trim() ?? "",
+    clientSecret: (data.clientSecret as string)?.trim() ?? "",
+  };
 }
 
 function saveCredentials(clientId: string, clientSecret: string) {
-  fs.writeFileSync(configPath(), JSON.stringify({ clientId, clientSecret }, null, 2));
+  writeSecureJSON(configPath(), { clientId, clientSecret });
 }
 
 // ── 세션 파일 (userData/session-source.json, session-dest.json) ─────────────
@@ -43,15 +40,11 @@ function sessionPath(role: "source" | "dest"): string {
 }
 
 function loadSession(role: "source" | "dest"): Session | null {
-  try {
-    return JSON.parse(fs.readFileSync(sessionPath(role), "utf-8"));
-  } catch {
-    return null;
-  }
+  return readSecureJSON(sessionPath(role)) as Session | null;
 }
 
 function saveSession(role: "source" | "dest", session: Session) {
-  fs.writeFileSync(sessionPath(role), JSON.stringify(session, null, 2));
+  writeSecureJSON(sessionPath(role), session);
 }
 
 function clearSession(role: "source" | "dest") {
@@ -80,6 +73,47 @@ function isAccountSuspended(errData: any): boolean {
   const reason = errData?.error?.errors?.[0]?.reason ?? "";
   const message: string = errData?.error?.message ?? "";
   return reason === "accountSuspended" || message.toLowerCase().includes("suspended");
+}
+
+// ── HTML escape (OAuth 콜백 등 사용자 제공 값 삽입 시 XSS 방지) ────────────────
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// ── safeStorage 기반 암호화 파일 입출력 ────────────────────────────────────────
+// 평문 JSON 대신 OS 키체인으로 암호화한 바이너리를 저장.
+// safeStorage 미지원 환경(구형 OS 등)은 평문으로 폴백.
+const safeStorageAvailable = (() => {
+  try { return safeStorage.isEncryptionAvailable(); }
+  catch { return false; }
+})();
+
+function readSecureJSON(p: string): Record<string, unknown> | null {
+  try {
+    const buf = fs.readFileSync(p);
+    // 과거 평문 파일 호환: buf가 JSON이면 그대로 파싱
+    if (safeStorageAvailable) {
+      try {
+        return JSON.parse(safeStorage.decryptString(buf));
+      } catch {
+        return JSON.parse(buf.toString("utf-8"));
+      }
+    }
+    return JSON.parse(buf.toString("utf-8"));
+  } catch {
+    return null;
+  }
+}
+
+function writeSecureJSON(p: string, data: unknown): void {
+  const json = JSON.stringify(data, null, 2);
+  const payload = safeStorageAvailable ? safeStorage.encryptString(json) : Buffer.from(json, "utf-8");
+  fs.writeFileSync(p, payload);
 }
 
 // ── PKCE ────────────────────────────────────────────────────────────────────────
@@ -125,7 +159,7 @@ async function doOAuth(scope: string, role: "source" | "dest") {
       const error = url.searchParams.get("error");
 
       const html = error
-        ? `<html><body style="font-family:sans-serif;text-align:center;padding:60px"><h2>인증 실패</h2><p>${error}</p><p>이 창을 닫고 다시 시도하세요.</p></body></html>`
+        ? `<html><body style="font-family:sans-serif;text-align:center;padding:60px"><h2>인증 실패</h2><p>${escapeHtml(error)}</p><p>이 창을 닫고 다시 시도하세요.</p></body></html>`
         : `<html><body style="font-family:sans-serif;text-align:center;padding:60px"><h2>인증 완료!</h2><p>이 창을 닫아도 됩니다.</p><script>setTimeout(()=>window.close(),1500)</script></body></html>`;
 
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
@@ -397,10 +431,21 @@ function startStaticServer(): Promise<void> {
     };
 
     staticServer = http.createServer((req, res) => {
-      const urlPath = (req.url ?? "/").split("?")[0];
-      let filePath = path.join(distPath, urlPath === "/" ? "index.html" : urlPath);
+      const urlPath = decodeURIComponent((req.url ?? "/").split("?")[0]);
+      // 경로 순회 방지: distPath 밖으로 벗어나면 거부
+      const resolved = path.resolve(distPath, "." + urlPath);
+      if (resolved !== distPath && !resolved.startsWith(distPath + path.sep)) {
+        res.writeHead(403);
+        res.end("Forbidden");
+        return;
+      }
 
-      if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+      let filePath = urlPath === "/" ? path.join(distPath, "index.html") : resolved;
+      try {
+        if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+          filePath = path.join(distPath, "index.html");
+        }
+      } catch {
         filePath = path.join(distPath, "index.html");
       }
 
