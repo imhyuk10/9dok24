@@ -26,9 +26,27 @@ function useMapError() {
   };
 }
 
+// 백엔드가 반환하는 error:xxx 코드를 번역. 매핑되지 않으면 원문 반환.
+const ERROR_CODE_KEYS = [
+  "error.invalidClientIdFormat", "error.invalidClientId",
+  "error.invalidClientSecretFormat", "error.invalidClientSecret",
+  "error.connectionFailed", "error.invalidCredentials",
+] as const;
+
+function useMapReason() {
+  const { t } = useI18n();
+  return (reason?: string): string => {
+    if (reason && (ERROR_CODE_KEYS as readonly string[]).includes(reason)) {
+      return t(reason as (typeof ERROR_CODE_KEYS)[number]);
+    }
+    return reason ?? t("error.invalidCredentials");
+  };
+}
+
 export default function Index() {
   const { t } = useI18n();
   const mapError = useMapError();
+  const mapReason = useMapReason();
 
   // 저장된 테마 초기 적용
   useEffect(() => {
@@ -105,7 +123,7 @@ export default function Index() {
     try {
       const check = await window.electronAPI.validateConfig(inputClientId.trim(), inputClientSecret.trim());
       if (!check.valid) {
-        setError(check.reason ?? t("error.invalidCredentials"));
+        setError(mapReason(check.reason));
         return;
       }
       await window.electronAPI.saveConfig(inputClientId.trim(), inputClientSecret.trim());
@@ -601,7 +619,7 @@ export default function Index() {
               <button
                 onClick={exportJSON}
                 className="p-2.5 text-muted-foreground hover:text-foreground border border-border rounded-xl bg-secondary/50 hover:bg-secondary transition-all"
-                title="JSON 내보내기"
+                title={t("subs.exportJson")}
               >
                 <Download className="w-4 h-4" />
               </button>

@@ -262,6 +262,23 @@ const translations = {
     ja: "移行中にエラーが発生しました",
   },
 
+  // 채널 상태 라벨
+  "status.pending": {
+    ko: "대기", en: "Pending", fr: "En attente", zh: "等待", ja: "待機",
+  },
+  "status.migrating": {
+    ko: "이전 중", en: "Migrating", fr: "Migration", zh: "迁移中", ja: "移行中",
+  },
+  "status.migrated": {
+    ko: "완료", en: "Done", fr: "Terminé", zh: "完成", ja: "完了",
+  },
+  "status.failed": {
+    ko: "실패", en: "Failed", fr: "Échec", zh: "失败", ja: "失敗",
+  },
+  "status.skipped": {
+    ko: "건너뜀", en: "Skipped", fr: "Ignoré", zh: "跳过", ja: "スキップ",
+  },
+
   // 구독 목록
   "subs.search": {
     ko: "채널 검색...",
@@ -452,6 +469,41 @@ const translations = {
     fr: "Client ID ou Secret invalide.",
     zh: "Client ID 或 Secret 无效。",
     ja: "Client IDまたはSecretが正しくありません。",
+  },
+  "error.invalidClientIdFormat": {
+    ko: "Client ID 형식이 올바르지 않습니다 (.apps.googleusercontent.com 포함 필요).",
+    en: "Invalid Client ID format (must include .apps.googleusercontent.com).",
+    fr: "Format de Client ID invalide (doit inclure .apps.googleusercontent.com).",
+    zh: "Client ID 格式无效（必须包含 .apps.googleusercontent.com）。",
+    ja: "Client IDの形式が正しくありません（.apps.googleusercontent.com を含む必要があります）。",
+  },
+  "error.invalidClientId": {
+    ko: "Client ID가 올바르지 않습니다.",
+    en: "Invalid Client ID.",
+    fr: "Client ID invalide.",
+    zh: "Client ID 无效。",
+    ja: "Client IDが正しくありません。",
+  },
+  "error.invalidClientSecretFormat": {
+    ko: "Client Secret 형식이 올바르지 않습니다 (GOCSPX- 로 시작 필요).",
+    en: "Invalid Client Secret format (must start with GOCSPX-).",
+    fr: "Format de Client Secret invalide (doit commencer par GOCSPX-).",
+    zh: "Client Secret 格式无效（必须以 GOCSPX- 开头）。",
+    ja: "Client Secretの形式が正しくありません（GOCSPX- で始まる必要があります）。",
+  },
+  "error.invalidClientSecret": {
+    ko: "Client Secret이 올바르지 않습니다.",
+    en: "Invalid Client Secret.",
+    fr: "Client Secret invalide.",
+    zh: "Client Secret 无效。",
+    ja: "Client Secretが正しくありません。",
+  },
+  "error.connectionFailed": {
+    ko: "연결 실패. 네트워크를 확인하세요.",
+    en: "Connection failed. Check your network.",
+    fr: "Échec de connexion. Vérifiez votre réseau.",
+    zh: "连接失败，请检查网络。",
+    ja: "接続に失敗しました。ネットワークを確認してください。",
   },
   "error.accountSuspended": {
     ko: "이 YouTube 계정은 영구 정지된 상태입니다. Google 고객센터에 문의하세요.",
