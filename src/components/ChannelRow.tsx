@@ -36,7 +36,13 @@ const ChannelRow = ({ channel, selected, onToggle, index }: ChannelRowProps) => 
           onClick={(e) => e.stopPropagation()}
         />
         <div className="w-8 h-8 rounded-md bg-secondary border border-border overflow-hidden flex-shrink-0">
-          <img src={channel.avatar} alt="" className="w-full h-full object-cover" />
+          {channel.avatar ? (
+            <img src={channel.avatar} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary text-xs font-bold">
+              {channel.name.slice(0, 1).toUpperCase()}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-foreground">{channel.name}</span>

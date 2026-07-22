@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef, useCallback, FormEvent } from "react";
+import { useState, useEffect, useRef, useCallback, ChangeEvent, FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Download, AlertCircle, Loader2, Settings,
-  RefreshCw, ArrowRightLeft, User,
+  ArrowRightLeft, User, Upload, FileSpreadsheet,
 } from "lucide-react";
 import ChannelRow from "@/components/ChannelRow";
 import MigrationProgress from "@/components/MigrationProgress";
@@ -11,9 +11,9 @@ import BrandLogo from "@/components/BrandLogo";
 import SettingsPopover from "@/components/SettingsPopover";
 import { useI18n } from "@/hooks/use-i18n";
 import type { ChannelStatus } from "@/components/StatusTag";
+import { parseSubscriptionsCsv } from "@/lib/subscriptions-csv";
 
 type View = "idle" | "subscriptions" | "transfer" | "migrating" | "done";
-
 interface Account { token: string; email: string; name: string; picture: string; }
 interface Sub { channelId: string; title: string; thumbnail: string; status: ChannelStatus; }
 
@@ -55,7 +55,7 @@ export default function Index() {
   }, []);
 
   const [configured, setConfigured] = useState<boolean | null>(null);
-  const [account, setAccount] = useState<Account | null>(null);
+  const [sourceName, setSourceName] = useState("");
   const [view, setView] = useState<View>("idle");
 
   const [subscriptions, setSubscriptions] = useState<Sub[]>([]);
@@ -63,8 +63,8 @@ export default function Index() {
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const [loggingIn, setLoggingIn] = useState(false);
-  const [fetching, setFetching] = useState(false);
+  const [importingCsv, setImportingCsv] = useState(false);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
   // 이전 관련
   const [destAccount, setDestAccount] = useState<Account | null>(null);
@@ -102,17 +102,9 @@ export default function Index() {
           const q = await window.electronAPI.loadQuota();
           setQuotaUsed(q.inserts);
         } catch { /* ignore */ }
-        if (!r.configured) return;
-        // 저장된 소스 세션 복원 시도
-        try {
-          const sess = await window.electronAPI.restoreSession("source");
-          if (sess.ok && sess.token) {
-            setAccount({ token: sess.token, email: sess.email!, name: sess.name!, picture: sess.picture! });
-          }
-        } catch { /* 세션 없으면 로그인 화면 표시 */ }
       })
       .catch(() => setConfigured(false));
-  }, []);
+  }, [t]);
 
   // ── 설정 저장 (유효성 검증 후) ───────────────────────────────────────────
   const handleSaveConfig = async (e: FormEvent) => {
@@ -136,24 +128,9 @@ export default function Index() {
     }
   };
 
-  // ── 메인 로그인 (소스 계정) ──────────────────────────────────────────────
-  const handleLogin = async () => {
-    setError(null);
-    setLoggingIn(true);
-    try {
-      const acc = await window.electronAPI.loginSource();
-      setAccount(acc);
-    } catch (e) {
-      setError(mapError(e));
-    } finally {
-      setLoggingIn(false);
-    }
-  };
-
   const handleLogout = () => {
-    window.electronAPI.clearSession("source").catch(() => {});
-    window.electronAPI.clearSession("dest").catch(() => {});
-    setAccount(null);
+    window.electronAPI.clearSession().catch(() => {});
+    setSourceName("");
     setSubscriptions([]);
     setSelectedIds(new Set());
     setDestAccount(null);
@@ -161,22 +138,34 @@ export default function Index() {
     setError(null);
   };
 
-  // ── 구독 목록 불러오기 ───────────────────────────────────────────────────
-  const handleFetchSubs = async () => {
-    if (!account) return;
+  const handleImportCsv = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setImportingCsv(true);
     setError(null);
-    setFetching(true);
     try {
-      const result = await window.electronAPI.fetchSubscriptions(account.token);
-      if (result.error) throw new Error(result.error);
-      const subs = result.subscriptions.map((s) => ({ ...s, status: "pending" as ChannelStatus }));
+      const result = parseSubscriptionsCsv(await file.text());
+      const subs = result.subscriptions.map((subscription) => ({
+        ...subscription,
+        thumbnail: "",
+        status: "pending" as ChannelStatus,
+      }));
+
+      setSourceName(file.name);
       setSubscriptions(subs);
-      setSelectedIds(new Set(subs.map((s) => s.channelId)));
-      setView("subscriptions");
+      setSelectedIds(new Set(subs.map((subscription) => subscription.channelId)));
+      setDestAccount(null);
+      setSearchQuery("");
+      setView("transfer");
     } catch (e) {
-      setError(mapError(e));
+      const reason = e instanceof Error ? e.message : "";
+      if (reason === "csv:empty") setError(t("csv.errorEmpty"));
+      else if (reason === "csv:missingChannelId") setError(t("csv.errorHeader"));
+      else setError(t("csv.errorInvalid"));
     } finally {
-      setFetching(false);
+      setImportingCsv(false);
     }
   };
 
@@ -186,9 +175,6 @@ export default function Index() {
     setLoggingInDest(true);
     try {
       const acc = await window.electronAPI.loginDest();
-      if (acc.email === account?.email) {
-        throw new Error(t("transfer.sameAccount"));
-      }
       setDestAccount(acc);
     } catch (e) {
       setError(mapError(e));
@@ -201,7 +187,8 @@ export default function Index() {
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }, []);
@@ -234,39 +221,56 @@ export default function Index() {
       const alreadyIds = Array.from(selectedIds).filter((id) => existingIds.has(id));
       if (alreadyIds.length > 0) {
         setSubscriptions((prev) =>
-          prev.map((s) => alreadyIds.includes(s.channelId) ? { ...s, status: "migrated" as ChannelStatus } : s)
+          prev.map((s) => alreadyIds.includes(s.channelId) ? { ...s, status: "skipped" as ChannelStatus } : s)
         );
       }
     } catch {
-      // 조회 실패 시 전체 시도
-      newChannelIds = Array.from(selectedIds);
+      // 중복 확인에 실패하면 구독 쓰기 요청을 보내지 않는다.
+      setError(t("transfer.precheckFailed"));
+      return;
     }
 
     if (newChannelIds.length === 0) {
       setError(t("transfer.allAlready"));
       setSubscriptions((prev) =>
-        prev.map((s) => selectedIds.has(s.channelId) ? { ...s, status: "migrated" as ChannelStatus } : s)
+        prev.map((s) => selectedIds.has(s.channelId) ? { ...s, status: "skipped" as ChannelStatus } : s)
       );
       setView("done");
       return;
     }
 
+    const latestQuota = await window.electronAPI.loadQuota();
+    const remainingCapacity = Math.max(0, DAILY_MAX - latestQuota.inserts);
+    setQuotaUsed(latestQuota.inserts);
+    if (remainingCapacity === 0) {
+      setQuotaExceeded(true);
+      setError(t("transfer.quotaExceeded"));
+      return;
+    }
+
+    const queuedChannelIds = newChannelIds.slice(0, remainingCapacity);
+    const deferredCount = newChannelIds.length - queuedChannelIds.length;
+
     setView("migrating");
     setMigCurrent(0);
-    setMigTotal(newChannelIds.length);
-    setQuotaUsed(0);
+    setMigTotal(queuedChannelIds.length);
     setQuotaExceeded(false);
 
-    const idSet = new Set(newChannelIds);
+    const idSet = new Set(queuedChannelIds);
     setSubscriptions((prev) =>
       prev.map((s) => ({ ...s, status: idSet.has(s.channelId) ? ("pending" as ChannelStatus) : s.status }))
     );
 
+    let stoppedEarly = false;
     unsubRef.current = window.electronAPI.onMigrateProgress((data) => {
+      if (data.stopped) stoppedEarly = true;
       const status: ChannelStatus =
-        data.result === "ok" || data.result === "already" ? "migrated" : "failed";
+        data.result === "ok" ? "migrated" : data.result === "already" ? "skipped" : "failed";
       if (data.result === "accountSuspended") {
         setError(t("error.accountSuspended"));
+      }
+      if (data.result === "restricted") {
+        setError(t("transfer.subscriptionRestricted"));
       }
       setSubscriptions((prev) =>
         prev.map((s) => s.channelId === data.channelId ? { ...s, status } : s)
@@ -285,7 +289,11 @@ export default function Index() {
     });
 
     try {
-      await window.electronAPI.startMigration(destAccount.token, newChannelIds);
+      await window.electronAPI.startMigration(destAccount.token, queuedChannelIds);
+      if (deferredCount > 0 && !stoppedEarly) {
+        setQuotaExceeded(true);
+        setError(t("transfer.quotaExceeded"));
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : t("transfer.error"));
     } finally {
@@ -371,7 +379,7 @@ export default function Index() {
   // ══════════════════════════════════════════════════════════════════════════
   // 로그인 화면
   // ══════════════════════════════════════════════════════════════════════════
-  if (!account) {
+  if (!sourceName) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
         {/* Background Gradient */}
@@ -386,12 +394,12 @@ export default function Index() {
             <BrandLogo size={64} showText={false} />
             <div className="mt-4">
               <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">9dok<span className="text-primary">24</span></h1>
-              <p className="text-xs font-bold text-muted-foreground tracking-widest uppercase opacity-70">{t("login.subtitle")}</p>
+              <p className="text-xs font-bold text-muted-foreground tracking-widest uppercase opacity-70">{t("csv.landingSubtitle")}</p>
             </div>
           </div>
           
           <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-            {t("login.description")}
+            {t("csv.landingDescription")}
           </p>
 
           {error && (
@@ -402,26 +410,21 @@ export default function Index() {
           )}
 
           <div className="space-y-3">
-            {loggingIn ? (
-              <div className="space-y-2">
-                <div className="w-full py-3 px-4 rounded-xl bg-primary/80 text-primary-foreground text-sm font-bold flex items-center justify-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" /> {t("login.loggingIn")}
-                </div>
-                <button
-                  onClick={() => { setLoggingIn(false); setError(t("login.cancelled")); }}
-                  className="w-full py-2 px-4 rounded-xl border border-border bg-secondary hover:bg-muted text-sm text-muted-foreground transition-colors"
-                >
-                  {t("login.cancel")}
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={handleLogin}
-                className="w-full py-4 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:shadow-lg hover:shadow-primary/20 transition-all flex items-center justify-center gap-2"
-              >
-                {t("login.button")}
-              </button>
-            )}
+            <input
+              ref={csvInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={handleImportCsv}
+            />
+            <button
+              onClick={() => csvInputRef.current?.click()}
+              disabled={importingCsv}
+              className="w-full py-4 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:shadow-lg hover:shadow-primary/20 transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+            >
+              {importingCsv ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              {importingCsv ? t("csv.importing") : t("csv.import")}
+            </button>
             
             <button
               onClick={() => setConfigured(false)}
@@ -451,16 +454,16 @@ export default function Index() {
           <div className="flex items-center gap-3">
             <APIQuotaGauge used={quotaUsed} total={DAILY_MAX} />
             <div className="flex items-center gap-2 pl-3 border-l border-border">
-              <div className="w-8 h-8 rounded-full bg-secondary border-2 border-primary/20 overflow-hidden shadow-inner">
-                {account.picture ? (
-                  <img src={account.picture} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <User className="w-4 h-4 text-muted-foreground m-auto mt-1.5" />
-                )}
+              <div className="w-8 h-8 rounded-full bg-secondary border-2 border-primary/20 overflow-hidden shadow-inner flex items-center justify-center">
+                <FileSpreadsheet className="w-4 h-4 text-primary" />
               </div>
               <div className="hidden sm:flex flex-col">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase leading-none mb-1">{t("header.sourceAccount")}</span>
-                <span className="text-xs font-semibold text-foreground leading-none">{account.email}</span>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase leading-none mb-1">
+                  {t("csv.sourceLabel")}
+                </span>
+                <span className="text-xs font-semibold text-foreground leading-none max-w-40 truncate">
+                  {sourceName}
+                </span>
               </div>
               <SettingsPopover
                 onApiSettings={() => { handleLogout(); setConfigured(false); }}
@@ -488,18 +491,21 @@ export default function Index() {
         </AnimatePresence>
 
         {/* 액션 버튼 */}
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
+          <input
+            ref={csvInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={handleImportCsv}
+          />
           <button
-            onClick={handleFetchSubs}
-            disabled={fetching || view === "migrating"}
+            onClick={() => csvInputRef.current?.click()}
+            disabled={importingCsv || view === "migrating"}
             className="flex items-center gap-2 px-5 py-3 rounded-xl border border-border bg-card hover:bg-secondary text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
           >
-            {fetching ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4" />
-            )}
-            {fetching ? t("action.fetching") : subscriptions.length > 0 ? t("action.refreshSubs") : t("action.fetchSubs")}
+            {importingCsv ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            {importingCsv ? t("csv.importing") : t("csv.importShort")}
           </button>
           {canTransfer && (
             <button
@@ -521,12 +527,12 @@ export default function Index() {
               exit={{ opacity: 0, scale: 0.98 }}
               className="border border-border rounded-2xl bg-card p-6 space-y-6 shadow-xl relative overflow-hidden"
             >
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-rose-600" />
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-cyan-400" />
               
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{t("transfer.destTitle")}</h3>
-                  <p className="text-xs text-muted-foreground mt-1">{t("transfer.destDesc")}</p>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{t("csv.destinationTitle")}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">{t("csv.destinationDescription")}</p>
                 </div>
                 {view === "transfer" && destAccount && (
                   <button
@@ -548,7 +554,7 @@ export default function Index() {
                   {loggingInDest ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> {t("transfer.destLoggingIn")}</>
                   ) : (
-                    <><User className="w-4 h-4 group-hover:text-primary transition-colors" /> {t("transfer.destLogin")}</>
+                    <><User className="w-4 h-4 group-hover:text-primary transition-colors" /> {t("csv.destinationLogin")}</>
                   )}
                 </button>
               ) : (

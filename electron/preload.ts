@@ -8,10 +8,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("config:validate", { clientId, clientSecret }),
   saveConfig: (clientId: string, clientSecret: string) =>
     ipcRenderer.invoke("config:save", { clientId, clientSecret }),
-  loginSource: () => ipcRenderer.invoke("auth:source"),
   loginDest: () => ipcRenderer.invoke("auth:dest"),
-  restoreSession: (role: string) => ipcRenderer.invoke("session:restore", role),
-  clearSession: (role: string) => ipcRenderer.invoke("session:clear", role),
+  clearSession: () => ipcRenderer.invoke("session:clear", "dest"),
   fetchSubscriptions: (token: string) => ipcRenderer.invoke("subscriptions:fetch", token),
   startMigration: (token: string, channelIds: string[]) =>
     ipcRenderer.invoke("migrate:start", { token, channelIds }),

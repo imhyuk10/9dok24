@@ -271,12 +271,15 @@ async function migrateSubscriptions(
   token: string,
   channelIds: string[],
 ) {
-  const total = channelIds.length;
+  const uniqueChannelIds = Array.from(new Set(channelIds))
+    .filter((channelId) => /^UC[A-Za-z0-9_-]{22}$/.test(channelId));
+  const total = uniqueChannelIds.length;
 
   for (let i = 0; i < total; i++) {
-    const channelId = channelIds[i];
+    const channelId = uniqueChannelIds[i];
     let result = "ok";
     let quotaExceeded = false;
+    let shouldStop = false;
 
     try {
       const resp = await fetch("https://www.googleapis.com/youtube/v3/subscriptions?part=snippet", {
@@ -294,16 +297,27 @@ async function migrateSubscriptions(
         const err = await resp.json() as any;
         const reason = err?.error?.errors?.[0]?.reason ?? "";
         if (reason === "subscriptionDuplicate") result = "already";
-        else if (reason === "quotaExceeded" || resp.status === 429) { result = "quota"; quotaExceeded = true; }
-        else if (isAccountSuspended(err)) { result = "accountSuspended"; quotaExceeded = true; }
+        else if (reason === "quotaExceeded" || resp.status === 429) {
+          result = "quota";
+          quotaExceeded = true;
+          shouldStop = true;
+        }
+        else if (isAccountSuspended(err)) {
+          result = "accountSuspended";
+          shouldStop = true;
+        }
+        else if (reason === "subscriptionForbidden") {
+          result = "restricted";
+          shouldStop = true;
+        }
         else result = "fail";
       }
     } catch {
       result = "fail";
     }
 
-    event.sender.send("migrate:progress", { current: i + 1, total, channelId, result, quotaExceeded });
-    if (quotaExceeded) break;
+    event.sender.send("migrate:progress", { current: i + 1, total, channelId, result, quotaExceeded, stopped: shouldStop });
+    if (shouldStop) break;
     if (i < total - 1) await new Promise((r) => setTimeout(r, 300));
   }
 
@@ -365,10 +379,6 @@ function registerIPC() {
     }
     return { valid: true };
   });
-
-  ipcMain.handle("auth:source", () =>
-    doOAuth("https://www.googleapis.com/auth/youtube.readonly", "source")
-  );
 
   ipcMain.handle("auth:dest", () =>
     doOAuth("https://www.googleapis.com/auth/youtube", "dest")
