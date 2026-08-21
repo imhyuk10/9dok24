@@ -5,40 +5,47 @@ interface APIQuotaGaugeProps {
   total: number;
 }
 
+// 상단바의 계측 스트립: 10칸 세그먼트 미터 + 탭ular 카운터
+const SEGMENTS = 10;
+
 const APIQuotaGauge = ({ used, total }: APIQuotaGaugeProps) => {
   const { t } = useI18n();
-  const percentage = (used / total) * 100;
-  const radius = 18;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (percentage / 100) * circumference;
-
+  const clamped = Math.min(used, total);
+  const filled = Math.round((clamped / total) * SEGMENTS);
   const isHigh = used >= total - 10;
 
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="relative w-10 h-10">
-        <svg className="w-10 h-10 -rotate-90" viewBox="0 0 44 44">
-          <circle cx="22" cy="22" r={radius} fill="none" stroke="hsl(var(--border))" strokeWidth="3" />
-          <circle
-            cx="22" cy="22" r={radius} fill="none"
-            stroke={isHigh ? "hsl(var(--destructive))" : "hsl(var(--primary))"}
-            strokeWidth="3"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            strokeLinecap="round"
-            className="transition-all duration-500"
+    <div
+      className="flex items-center gap-2"
+      title={`${t("quota.label")} ${clamped} / ${total}`}
+      role="meter"
+      aria-valuemin={0}
+      aria-valuemax={total}
+      aria-valuenow={clamped}
+      aria-label={t("quota.label")}
+    >
+      <span className="text-[11px] font-medium text-muted-foreground whitespace-nowrap hidden md:inline">
+        {t("quota.label")}
+      </span>
+      <div className="flex items-center gap-[3px]">
+        {Array.from({ length: SEGMENTS }, (_, i) => (
+          <span
+            key={i}
+            className={`w-[5px] h-3 rounded-[1px] transition-colors duration-300 ${
+              i < filled
+                ? isHigh ? "bg-destructive" : "bg-primary"
+                : "bg-border"
+            }`}
           />
-        </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-[10px] font-mono font-semibold text-foreground tabular-nums">
-          {used}
-        </span>
+        ))}
       </div>
-      <div>
-        <p className="text-xs text-muted-foreground">{t("quota.label")}</p>
-        <p className={`text-xs font-mono font-medium tabular-nums ${isHigh ? "text-destructive" : "text-foreground"}`}>
-          {used} / {t("quota.max")} {total}
-        </p>
-      </div>
+      <span
+        className={`font-mono text-[11px] font-semibold tabular-nums whitespace-nowrap ${
+          isHigh ? "text-destructive" : "text-foreground"
+        }`}
+      >
+        {clamped}<span className="text-muted-foreground font-normal">/{total}</span>
+      </span>
     </div>
   );
 };

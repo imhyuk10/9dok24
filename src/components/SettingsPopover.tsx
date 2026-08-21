@@ -85,9 +85,9 @@ export default function SettingsPopover({ onApiSettings, onLogout }: SettingsPop
 
   const [theme, setThemeState] = useState<"light" | "dark">(() => {
     if (typeof localStorage !== "undefined") {
-      return (localStorage.getItem("theme") as "light" | "dark") || "dark";
+      return (localStorage.getItem("theme") as "light" | "dark") || "light";
     }
-    return "dark";
+    return "light";
   });
 
   useEffect(() => {
@@ -109,7 +109,7 @@ export default function SettingsPopover({ onApiSettings, onLogout }: SettingsPop
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+        className="h-7 w-7 grid place-content-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
         title={t("settingsMenu.title")}
       >
         <Settings className="w-4 h-4" />
@@ -122,17 +122,17 @@ export default function SettingsPopover({ onApiSettings, onLogout }: SettingsPop
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 w-64 bg-popover border border-border rounded-xl shadow-lg overflow-hidden z-50"
+            className="absolute right-0 top-full mt-2 w-64 bg-popover border border-border rounded-lg shadow-elevated overflow-hidden z-50"
           >
             <div className="px-4 py-3 border-b border-border">
-              <h3 className="text-sm font-bold text-foreground">{t("settingsMenu.title")}</h3>
+              <h3 className="text-[13px] font-semibold text-foreground">{t("settingsMenu.title")}</h3>
             </div>
 
             <div className="p-2 space-y-1">
               {/* 테마 */}
               <div className="px-3 py-2">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{t("settingsMenu.theme")}</p>
-                <div className="flex gap-1 bg-secondary/50 rounded-lg p-1">
+                <p className="text-[11px] font-medium text-muted-foreground mb-1.5">{t("settingsMenu.theme")}</p>
+                <div className="flex gap-1 bg-secondary/70 rounded-md p-0.5">
                   <button
                     onClick={() => setThemeState("light")}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-all ${
@@ -160,8 +160,8 @@ export default function SettingsPopover({ onApiSettings, onLogout }: SettingsPop
 
               {/* 언어 */}
               <div className="px-3 py-2">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{t("settingsMenu.language")}</p>
-                <div className="grid grid-cols-5 gap-1 bg-secondary/50 rounded-lg p-1">
+                <p className="text-[11px] font-medium text-muted-foreground mb-1.5">{t("settingsMenu.language")}</p>
+                <div className="grid grid-cols-5 gap-1 bg-secondary/70 rounded-md p-0.5">
                   {LANG_OPTIONS.map(({ code, label, Flag }) => (
                     <button
                       key={code}
@@ -184,7 +184,7 @@ export default function SettingsPopover({ onApiSettings, onLogout }: SettingsPop
                 {/* API 설정 */}
                 <button
                   onClick={() => { setOpen(false); onApiSettings(); }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-md text-[13px] text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                 >
                   {t("settingsMenu.apiSettings")}
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -193,7 +193,7 @@ export default function SettingsPopover({ onApiSettings, onLogout }: SettingsPop
                 {/* 로그아웃 */}
                 <button
                   onClick={() => { setOpen(false); onLogout(); }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-all"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-md text-[13px] text-destructive hover:bg-destructive/10 transition-colors"
                 >
                   {t("settingsMenu.logout")}
                   <ChevronRight className="w-3.5 h-3.5" />

@@ -384,6 +384,43 @@ const translations = {
     ko: "건너뜀", en: "Skipped", fr: "Ignoré", zh: "跳过", ja: "スキップ",
   },
 
+  // 목록 편집 (추가/삭제 — 로그인 불필요)
+  "subs.addPlaceholder": {
+    ko: "채널 URL 또는 ID (UC...)를 붙여넣어 추가",
+    en: "Paste a channel URL or ID (UC...) to add",
+    fr: "Collez une URL ou un ID de chaîne (UC...) pour ajouter",
+    zh: "粘贴频道 URL 或 ID（UC...）以添加",
+    ja: "チャンネルURLまたはID（UC...）を貼り付けて追加",
+  },
+  "subs.addBtn": {
+    ko: "추가",
+    en: "Add",
+    fr: "Ajouter",
+    zh: "添加",
+    ja: "追加",
+  },
+  "subs.addInvalid": {
+    ko: "채널 ID를 인식할 수 없습니다. youtube.com/channel/UC... 주소 또는 UC로 시작하는 24자 ID를 입력하세요.",
+    en: "Could not recognize a channel ID. Enter a youtube.com/channel/UC... URL or a 24-character ID starting with UC.",
+    fr: "ID de chaîne non reconnu. Entrez une URL youtube.com/channel/UC... ou un ID de 24 caractères commençant par UC.",
+    zh: "无法识别频道 ID。请输入 youtube.com/channel/UC... 地址或以 UC 开头的 24 位 ID。",
+    ja: "チャンネルIDを認識できません。youtube.com/channel/UC... のURLまたはUCで始まる24文字のIDを入力してください。",
+  },
+  "subs.addDuplicate": {
+    ko: "이미 목록에 있는 채널입니다.",
+    en: "This channel is already in the list.",
+    fr: "Cette chaîne est déjà dans la liste.",
+    zh: "该频道已在列表中。",
+    ja: "このチャンネルはすでにリストにあります。",
+  },
+  "subs.remove": {
+    ko: "목록에서 삭제",
+    en: "Remove from list",
+    fr: "Retirer de la liste",
+    zh: "从列表中删除",
+    ja: "リストから削除",
+  },
+
   // 구독 목록
   "subs.search": {
     ko: "채널 검색...",

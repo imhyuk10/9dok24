@@ -39,3 +39,6 @@ CLAUDE.md
 
 # Binary lockfile (text bun.lock is sufficient)
 bun.lockb
+
+# impeccable design review artifacts
+.impeccable/

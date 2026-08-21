@@ -10,6 +10,7 @@ interface MigrationProgressProps {
   failedCount?: number;
 }
 
+// 실행 레일: 진행 카운터 + 게이지 + 할당량. 계기판처럼 숫자가 주인공.
 const MigrationProgress = ({ current, total, isActive, quotaUsed, quotaMax, failedCount = 0 }: MigrationProgressProps) => {
   const { t } = useI18n();
   if (!isActive && current === 0) return null;
@@ -21,41 +22,38 @@ const MigrationProgress = ({ current, total, isActive, quotaUsed, quotaMax, fail
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
-      className="w-full bg-card border border-border rounded-lg p-5 shadow-elevated"
+      transition={{ duration: 0.25, ease: [0.2, 0, 0, 1] }}
+      className="w-full"
     >
-      <div className="flex justify-between items-end mb-4">
-        <div>
-          <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
+      <div className="flex items-end justify-between mb-2.5">
+        <div className="flex items-baseline gap-3">
+          <span className="font-mono text-2xl font-bold text-foreground tabular-nums leading-none">
+            {current}<span className="text-muted-foreground font-medium text-base">/{total}</span>
+          </span>
+          <span className="text-xs font-medium text-muted-foreground">
             {isDone ? t("migration.complete") : t("migration.inProgress")}
-          </p>
-          <h2 className="text-2xl font-bold text-foreground tabular-nums font-mono">
-            {current} / {total}
-          </h2>
+          </span>
         </div>
-        <div className="text-right">
-          <p className="text-xs text-muted-foreground">{t("migration.apiUsed")}</p>
-          <p className={`text-xs font-medium font-mono tabular-nums ${clampedUsed >= quotaMax - 10 ? "text-destructive" : "text-primary"}`}>
-            {clampedUsed} / {t("quota.max")} {quotaMax}
-          </p>
-        </div>
+        <span className={`font-mono text-[11px] tabular-nums ${clampedUsed >= quotaMax - 10 ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+          {t("migration.apiUsed")} {clampedUsed}/{quotaMax}
+        </span>
       </div>
 
-      <div className="h-1.5 w-full bg-border rounded-full overflow-hidden">
+      <div className="h-1 w-full bg-border rounded-full overflow-hidden">
         <motion.div
           className={`h-full rounded-full ${isDone ? (failedCount > 0 ? "bg-warning" : "bg-success") : "bg-primary"}`}
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
-          transition={{ duration: 0.5, ease: "circOut" }}
+          transition={{ duration: 0.4, ease: "circOut" }}
         />
       </div>
 
       {isDone && (
-        <p className={`text-xs mt-3 font-medium ${failedCount > 0 ? "text-warning" : "text-success"}`}>
+        <p className={`text-xs mt-2.5 font-medium tabular-nums ${failedCount > 0 ? "text-warning" : "text-success"}`}>
           {failedCount === 0
-            ? `✓ ${succeededCount}${t("migration.channelsMigrated")}`
+            ? `${succeededCount}${t("migration.channelsMigrated")}`
             : `${succeededCount}${t("subs.done")} · ${failedCount}${t("subs.failed")}`}
         </p>
       )}
