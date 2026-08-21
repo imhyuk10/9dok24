@@ -14,27 +14,29 @@
 
 ---
 
-Migrate your YouTube subscriptions from one Google account to another — fast, selectively, and with a built-in API quota gauge.
+Migrate your YouTube subscriptions into another Google account from a Google Takeout CSV — no source-account login, selective, resumable, with a built-in API quota meter.
 
 ---
 
 ## Features
 
-- **Fetch subscriptions** — Load all subscribed channels from the source account.
-- **Selective transfer** — Search channels and pick only the ones you want to move.
-- **Duplicate-aware** — Channels already subscribed in the destination are skipped automatically.
-- **API quota gauge** — Shows the app's tracked daily YouTube Data API inserts against the 200/day limit.
-- **JSON export** — Save your subscription list as a JSON file.
-- **Dark / Light theme** — Toggle in-app at any time.
-- **Korean / English** — Full UI localisation for both languages.
+- **Takeout CSV import** — Load your channel list from Google Takeout's `subscriptions.csv`. Click or drag & drop. The source account never needs to log in.
+- **Local persistence** — The imported list and each channel's progress (done / skipped / failed / pending) are saved locally. Import the CSV once; every later launch resumes where you left off.
+- **Edit without login** — Add channels by pasting a channel URL or `UC…` ID, remove rows, select any subset. All offline.
+- **Duplicate-aware** — Channels already subscribed in the destination are detected up front and skipped at zero quota cost.
+- **Thumbnails & titles auto-filled** — After signing in, channel avatars and missing titles are fetched in cheap 50-per-call batches and cached.
+- **API quota meter** — A segmented gauge in the top bar tracks the app's daily subscribe-inserts against the 200/day limit.
+- **Cancellable OAuth** — Sign-in waits up to 5 minutes and can be cancelled at any moment.
+- **JSON export** — Save the list (with statuses) as JSON.
+- **Light / Dark theme** — Light by default, toggle in-app. UI in 한국어 / English / Français / 中文 / 日本語.
 
 ---
 
 ## Screenshot
 
-![9dok24 migration in progress](public/screenshot.png)
+![9dok24 console](public/screenshot.png)
 
-*Migrating 297 subscriptions — 59 transferred, with the API quota gauge visible in the header.*
+*The console: channel ledger with per-row status, destination login and run controls, and the API quota meter in the top bar.*
 
 ---
 
@@ -46,25 +48,31 @@ On first launch, the app will prompt for OAuth credentials. Follow these steps:
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/) → create a new project.
 2. Enable **YouTube Data API v3**.
-3. Configure the **OAuth consent screen** → add test users (your two Google accounts).
+3. Configure the **OAuth consent screen** → keep the app in *Testing* mode and add your destination account as a **test user**.
 4. Go to **Credentials** → **Create OAuth Client ID** → application type: **Desktop App**.
 5. Enter the generated **Client ID** and **Client Secret** in the app.
 
-### 2. Run the app
+### 2. Get your subscriptions CSV
+
+1. Open [Google Takeout](https://takeout.google.com/) with the *source* account.
+2. Select only **YouTube and YouTube Music** → include **subscriptions**.
+3. Export, download the archive, and locate `subscriptions.csv` (`구독정보.csv` in Korean locales).
+
+### 3. Run the app
 
 ```bash
 npm install
 npm run dev
 ```
 
-### 3. Migration flow
+### 4. Migration flow
 
-1. **Sign in with Google** — log in with the account you want to *export from*.
-2. **Fetch subscriptions** — your subscribed channels will be listed.
-3. **Select channels** — search and pick the channels to migrate (all selected by default).
-4. **Transfer** — sign in with the *destination* account, then start the transfer.
+1. **Import the CSV** — click the drop zone or drag the file in. The list is saved locally, so this is a one-time step.
+2. **Review the list** — search, deselect, remove rows, or add extra channels by URL/ID.
+3. **Sign in with the destination account** — the Google consent screen opens in your browser ("unverified app" warnings are expected for a personal OAuth client: *Advanced → Continue*).
+4. **Transfer** — already-subscribed channels are skipped; the rest are subscribed one by one with live per-row status.
 
-> **Quota note:** YouTube Data API allows ~200 subscription inserts per day. If the limit is hit, resume the next day — already-migrated channels are skipped.
+> **Quota note:** YouTube Data API allows ~200 subscription inserts per day (resets at midnight Pacific Time). If the limit is hit, just run again the next day — completed channels are remembered and skipped.
 
 ---
 
@@ -93,6 +101,9 @@ npm run test:watch   # Vitest watch mode
 npm run pack         # electron-builder --dir → release/win-unpacked/
 npm run dist         # electron-builder full installer → release/
 ```
+
+Opening `localhost:8080` in a plain browser uses a dev-only mock of the Electron API
+(`?mock=list` / `?mock=empty` / `?mock=setup`) for UI work without Electron.
 
 ---
 
