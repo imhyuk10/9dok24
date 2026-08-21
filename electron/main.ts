@@ -125,9 +125,13 @@ function generatePKCE() {
 
 // ── OAuth ────────────────────────────────────────────────────────────────────────
 let activeServer: http.Server | null = null;
+let activeCancel: (() => void) | null = null;
 
 async function doOAuth(scope: string, role: "source" | "dest") {
-  if (activeServer) {
+  // 이전 로그인 시도가 대기 중이면 취소 처리
+  if (activeCancel) {
+    activeCancel();
+  } else if (activeServer) {
     activeServer.close();
     activeServer = null;
   }
@@ -166,17 +170,29 @@ async function doOAuth(scope: string, role: "source" | "dest") {
 
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       res.end(html);
-      server.close();
-      activeServer = null;
+      finish();
 
       if (error || !code) reject(new Error(error ?? "인증 코드 없음"));
       else resolve(code);
     });
 
+    const timeoutId = setTimeout(() => {
+      finish();
+      reject(new Error("OAuth 타임아웃 (5분)."));
+    }, 300_000);
+
+    function finish() {
+      clearTimeout(timeoutId);
+      server.close();
+      activeServer = null;
+      activeCancel = null;
+    }
+
+    // 렌더러의 취소 버튼(auth:cancel)에서 호출 — 대기 중인 로그인을 즉시 종료
+    activeCancel = () => { finish(); reject(new Error("error:cancelled")); };
     activeServer = server;
     server.listen(OAUTH_PORT, "127.0.0.1", () => shell.openExternal(authUrl));
-    server.on("error", (err) => { activeServer = null; reject(err); });
-    setTimeout(() => { server.close(); activeServer = null; reject(new Error("OAuth 타임아웃 (2분).")); }, 120_000);
+    server.on("error", (err) => { finish(); reject(err); });
   });
 
   // 토큰 교환
@@ -265,6 +281,40 @@ async function fetchSubscriptions(token: string) {
   return { subscriptions: subs };
 }
 
+// ── 채널 썸네일 조회 (channels.list, 50개씩 배치 — 호출당 1 unit) ────────────────
+async function fetchChannelThumbnails(token: string, channelIds: string[]) {
+  const thumbnails: Record<string, string> = {};
+  const titles: Record<string, string> = {};
+  const ids = Array.from(new Set(channelIds))
+    .filter((channelId) => /^UC[A-Za-z0-9_-]{22}$/.test(channelId));
+
+  for (let i = 0; i < ids.length; i += 50) {
+    const batch = ids.slice(i, i + 50);
+    const params = new URLSearchParams({
+      part: "snippet",
+      id: batch.join(","),
+      maxResults: "50",
+    });
+
+    try {
+      const resp = await fetch(`https://www.googleapis.com/youtube/v3/channels?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!resp.ok) continue; // 배치 실패는 건너뜀 — 썸네일은 부가 정보
+      const data = await resp.json() as any;
+      for (const item of data.items ?? []) {
+        if (!item?.id) continue;
+        const url = item?.snippet?.thumbnails?.default?.url ?? "";
+        if (url) thumbnails[item.id] = url;
+        const title = item?.snippet?.title ?? "";
+        if (title) titles[item.id] = title;
+      }
+    } catch { /* 네트워크 오류 시 해당 배치만 건너뜀 */ }
+  }
+
+  return { thumbnails, titles };
+}
+
 // ── 구독 옮기기 ────────────────────────────────────────────────────────────────────
 async function migrateSubscriptions(
   event: Electron.IpcMainInvokeEvent,
@@ -322,6 +372,12 @@ async function migrateSubscriptions(
   }
 
   return { done: true };
+}
+
+// ── 가져온 구독 목록 (userData/import-state.json) ────────────────────────────────
+// CSV로 불러온 목록과 채널별 진행 상태를 저장해 재실행 시 복원한다.
+function importStatePath(): string {
+  return path.join(app.getPath("userData"), "import-state.json");
 }
 
 // ── Quota 파일 (userData/quota.json) ─────────────────────────────────────────────
@@ -384,6 +440,11 @@ function registerIPC() {
     doOAuth("https://www.googleapis.com/auth/youtube", "dest")
   );
 
+  ipcMain.handle("auth:cancel", () => {
+    activeCancel?.();
+    return { ok: true };
+  });
+
   // 저장된 세션 복원
   ipcMain.handle("session:restore", async (_e, role: "source" | "dest") => {
     const session = loadSession(role);
@@ -406,9 +467,25 @@ function registerIPC() {
     fetchSubscriptions(token)
   );
 
+  ipcMain.handle("channels:thumbnails", (_e, { token, channelIds }: { token: string; channelIds: string[] }) =>
+    fetchChannelThumbnails(token, channelIds)
+  );
+
   ipcMain.handle("migrate:start", (event, { token, channelIds }: { token: string; channelIds: string[] }) =>
     migrateSubscriptions(event, token, channelIds)
   );
+
+  ipcMain.handle("import:save", (_e, state: unknown) => {
+    writeSecureJSON(importStatePath(), state);
+    return { ok: true };
+  });
+
+  ipcMain.handle("import:load", () => readSecureJSON(importStatePath()));
+
+  ipcMain.handle("import:clear", () => {
+    try { fs.unlinkSync(importStatePath()); } catch { /* ignore */ }
+    return { ok: true };
+  });
 
   ipcMain.handle("quota:load", () => {
     const data = loadQuotaFile();
@@ -508,7 +585,7 @@ function createSplash() {
     alwaysOnTop: true,
     center: true,
     show: false,
-    backgroundColor: "#0d0f14",
+    backgroundColor: "#F7F8FB",
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -536,7 +613,7 @@ function createWindow() {
     title: "9dok24",
     icon: fs.existsSync(iconPath) ? iconPath : undefined,
     show: false,
-    backgroundColor: "#0d0f14",
+    backgroundColor: "#F7F8FB",
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
