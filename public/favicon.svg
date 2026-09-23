@@ -1,11 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-  <!-- 9dok24 — 굵은 9의 꼬리가 이전(→) 화살표로 이어지는 마크 -->
-  <rect x="8" y="8" width="240" height="240" rx="56" fill="#1F42C1"/>
-  <!-- bowl: 속이 찬 원 + 작은 카운터 (열쇠 링으로 안 읽히게) -->
-  <circle cx="106" cy="94" r="46" fill="#FFFFFF"/>
-  <circle cx="104" cy="92" r="16" fill="#1F42C1"/>
-  <!-- descender → arrow -->
-  <path d="M138 100 L138 150 Q138 174 162 174 L170 174"
-        stroke="#FFFFFF" stroke-width="28" stroke-linecap="round" fill="none"/>
-  <path d="M164 146 L212 174 L164 202 Z" fill="#FFFFFF"/>
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="24" height="24" rx="6" fill="#E11D48"/>
+  <path d="M15 8.5C15 10.3807 13.4327 12 11.5 12C9.56731 12 8 10.3807 8 8.5C8 6.61929 9.56731 5 11.5 5C13.4327 5 15 6.61929 15 8.5Z" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M8 19C8 17.5 9 16 11.5 16C14 16 15 17.5 15 19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M15 8.5V19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="19" cy="19" r="4" fill="white"/>
+  <path d="M17 19H21M21 19L19.5 17.5M21 19L19.5 20.5" stroke="#E11D48" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
