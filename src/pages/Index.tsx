@@ -14,7 +14,7 @@
 import { useState, useEffect, useRef, useCallback, ChangeEvent, FormEvent, DragEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Download, AlertCircle, Loader2, Settings,
+  Search, Download, Save, AlertCircle, Loader2, Settings,
   ArrowRightLeft, User, Upload, FileSpreadsheet, Plus, X,
 } from "lucide-react";
 import ChannelRow from "@/components/ChannelRow";
@@ -24,7 +24,7 @@ import BrandLogo from "@/components/BrandLogo";
 import SettingsPopover from "@/components/SettingsPopover";
 import { useI18n } from "@/hooks/use-i18n";
 import type { ChannelStatus } from "@/components/StatusTag";
-import { parseSubscriptionsCsv } from "@/lib/subscriptions-csv";
+import { parseSubscriptionsCsv, toSubscriptionsCsv } from "@/lib/subscriptions-csv";
 
 type View = "idle" | "subscriptions" | "transfer" | "migrating" | "done";
 interface Account { token: string; email: string; name: string; picture: string; }
@@ -430,15 +430,28 @@ export default function Index() {
     }
   };
 
-  // ── JSON 내보내기 ────────────────────────────────────────────────────────
-  const exportJSON = () => {
-    const blob = new Blob([JSON.stringify(subscriptions, null, 2)], { type: "application/json" });
+  // ── 파일 내보내기 ────────────────────────────────────────────────────────
+  const downloadFile = (filename: string, content: string, type: string) => {
+    const blob = new Blob([content], { type });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "subscriptions.json";
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const exportJSON = () => {
+    downloadFile("subscriptions.json", JSON.stringify(subscriptions, null, 2), "application/json");
+  };
+
+  // 편집(추가/제거) 결과를 Takeout 형식 CSV로 저장 — 저장한 파일은 다시 가져오기로 복원 가능
+  const saveListCsv = () => {
+    const base = sourceName.replace(/\.[^.]+$/, "") || "subscriptions";
+    const csv = toSubscriptionsCsv(
+      subscriptions.map(({ channelId, title }) => ({ channelId, title }))
+    );
+    downloadFile(`${base}-9dok24.csv`, csv, "text/csv;charset=utf-8");
   };
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -805,6 +818,13 @@ export default function Index() {
                 title={t("csv.importShort")}
               >
                 {importingCsv ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+              </button>
+              <button
+                onClick={saveListCsv}
+                className="h-7 w-7 grid place-content-center text-muted-foreground hover:text-foreground rounded-md hover:bg-secondary transition-colors"
+                title={t("subs.saveCsv")}
+              >
+                <Save className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={exportJSON}

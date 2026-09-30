@@ -23,6 +23,7 @@ Migrez vos abonnements YouTube vers un autre compte Google à partir d'un CSV Go
 - **Import CSV Takeout** — Chargez votre liste de chaînes depuis le `subscriptions.csv` de Google Takeout. Clic ou glisser-déposer. Le compte source n'a jamais besoin de se connecter.
 - **Persistance locale** — La liste importée et l'état de chaque chaîne (terminé / ignoré / échec / en attente) sont enregistrés localement. Importez le CSV une seule fois ; chaque lancement suivant reprend où vous en étiez.
 - **Édition sans connexion** — Ajoutez des chaînes en collant une URL ou un ID `UC…`, supprimez des lignes, sélectionnez un sous-ensemble. Tout hors ligne.
+- **Enregistrement CSV de la liste modifiée** — Enregistrez vos ajouts/retraits dans un CSV au format Takeout, réimportable à tout moment pour reprendre.
 - **Détection des doublons** — Les chaînes déjà suivies sur le compte de destination sont détectées en amont et ignorées sans coût de quota.
 - **Vignettes et titres auto-complétés** — Après connexion, les avatars et titres manquants sont récupérés par lots de 50 et mis en cache.
 - **Jauge de quota API** — Une jauge segmentée dans la barre supérieure suit les insertions quotidiennes face à la limite de 200/jour.

@@ -23,6 +23,7 @@ Migrate your YouTube subscriptions into another Google account from a Google Tak
 - **Takeout CSV import** — Load your channel list from Google Takeout's `subscriptions.csv`. Click or drag & drop. The source account never needs to log in.
 - **Local persistence** — The imported list and each channel's progress (done / skipped / failed / pending) are saved locally. Import the CSV once; every later launch resumes where you left off.
 - **Edit without login** — Add channels by pasting a channel URL or `UC…` ID, remove rows, select any subset. All offline.
+- **Save edited list as CSV** — Persist your added/removed edits back to a Takeout-style CSV that can be re-imported anytime to resume.
 - **Duplicate-aware** — Channels already subscribed in the destination are detected up front and skipped at zero quota cost.
 - **Thumbnails & titles auto-filled** — After signing in, channel avatars and missing titles are fetched in cheap 50-per-call batches and cached.
 - **API quota meter** — A segmented gauge in the top bar tracks the app's daily subscribe-inserts against the 200/day limit.

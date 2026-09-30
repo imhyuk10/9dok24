@@ -450,6 +450,13 @@ const translations = {
     zh: "导出 JSON",
     ja: "JSONエクスポート",
   },
+  "subs.saveCsv": {
+    ko: "편집한 목록 CSV로 저장 (다시 불러오기 가능)",
+    en: "Save edited list as CSV (reimportable)",
+    fr: "Enregistrer la liste modifiée en CSV (réimportable)",
+    zh: "将编辑后的列表保存为 CSV（可重新导入）",
+    ja: "編集したリストをCSVで保存（再読み込み可能）",
+  },
   "subs.noResults": {
     ko: "검색 결과가 없습니다.",
     en: "No results found.",

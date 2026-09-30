@@ -87,3 +87,19 @@ export function parseSubscriptionsCsv(text: string): CsvImportResult {
   if (byId.size === 0) throw new Error("csv:noValidChannels");
   return { subscriptions: Array.from(byId.values()), skippedRows };
 }
+
+// CSV 필드 규칙 — 쉼표/따옴표/줄바꿈이 있으면 감싸고, 따옴표는 두 번 반복
+function escapeCsvField(value: string): string {
+  return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
+// 편집(추가/제거)을 마친 목록을 Takeout과 같은 형식의 CSV로 저장 —
+// 저장한 파일은 다시 CSV 가져오기로 불러올 수 있다.
+export function toSubscriptionsCsv(subscriptions: CsvSubscription[]): string {
+  const lines = ["Channel Id,Channel Url,Channel Title"];
+  for (const { channelId, title } of subscriptions) {
+    const url = `https://www.youtube.com/channel/${channelId}`;
+    lines.push([channelId, url, title || channelId].map(escapeCsvField).join(","));
+  }
+  return lines.join("\r\n");
+}
