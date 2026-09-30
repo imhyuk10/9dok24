@@ -69,7 +69,7 @@ npm run dev
 ### 4. Migration flow
 
 1. **Import the CSV** — click the drop zone or drag the file in. The list is saved locally, so this is a one-time step.
-2. **Review the list** — search, deselect, remove rows, or add extra channels by URL/ID.
+2. **Review the list** — search, deselect, remove rows, or add extra channels by URL/ID. You can also save the edited list as a CSV that re-imports anytime (💾 in the toolbar).
 3. **Sign in with the destination account** — the Google consent screen opens in your browser ("unverified app" warnings are expected for a personal OAuth client: *Advanced → Continue*).
 4. **Transfer** — already-subscribed channels are skipped; the rest are subscribed one by one with live per-row status.
 

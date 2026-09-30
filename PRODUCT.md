@@ -12,7 +12,8 @@ short and task-driven: load list → connect account → run → come back tomor
 
 ## The job (Operate)
 1. Load/keep a channel list (CSV import once; list persists locally with per-channel status).
-2. Edit the list locally without login (add by URL/ID, remove rows, select subset).
+2. Edit the list locally without login (add by URL/ID, remove rows, select subset) and save the
+   edited list back as a Takeout-style CSV that re-imports anytime.
 3. Connect the destination Google account (OAuth, test-mode app: browser warning screens are normal).
 4. Run the migration; watch per-channel results (완료/건너뜀/실패); resume across days.
 

@@ -69,7 +69,7 @@ npm run dev
 ### 4. Déroulement de la migration
 
 1. **Importez le CSV** — cliquez sur la zone de dépôt ou glissez le fichier. La liste est enregistrée localement : c'est une étape unique.
-2. **Vérifiez la liste** — recherchez, désélectionnez, supprimez des lignes ou ajoutez des chaînes par URL/ID.
+2. **Vérifiez la liste** — recherchez, désélectionnez, supprimez des lignes ou ajoutez des chaînes par URL/ID. Vous pouvez aussi enregistrer la liste modifiée en CSV réimportable à tout moment (💾 dans la barre d'outils).
 3. **Connectez le compte de destination** — l'écran de consentement Google s'ouvre dans le navigateur (l'avertissement « application non validée » est normal pour un client OAuth personnel : *Paramètres avancés → Continuer*).
 4. **Transférez** — les chaînes déjà suivies sont ignorées ; les autres sont abonnées une à une avec un état en direct par ligne.
 
