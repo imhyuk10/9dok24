@@ -49,8 +49,16 @@ function normalizeHeader(value: string): string {
   return value.replace(/^\uFEFF/, "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+// Takeout CSV에는 제어 문자(예: 0x08 백스페이스)가 섞여 나오는 경우가 있어
+// 그대로 두면 채널명이 깨져 보인다 — 표시·검색 모두 안전하게 제거한다.
+export function stripControlChars(value: string): string {
+  // 제어 문자를 "의도적으로" 제거하는 정화 함수 — no-control-regex는 이 용례에 부적합
+  // eslint-disable-next-line no-control-regex
+  return value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+}
+
 export function parseSubscriptionsCsv(text: string): CsvImportResult {
-  const rows = parseRows(text);
+  const rows = parseRows(text).map((row) => row.map(stripControlChars));
   if (rows.length < 2) throw new Error("csv:empty");
 
   const headers = rows[0].map(normalizeHeader);

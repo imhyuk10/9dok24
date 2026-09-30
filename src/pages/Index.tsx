@@ -24,7 +24,11 @@ import BrandLogo from "@/components/BrandLogo";
 import SettingsPopover from "@/components/SettingsPopover";
 import { useI18n } from "@/hooks/use-i18n";
 import type { ChannelStatus } from "@/components/StatusTag";
-import { parseSubscriptionsCsv, toSubscriptionsCsv } from "@/lib/subscriptions-csv";
+import {
+  parseSubscriptionsCsv,
+  toSubscriptionsCsv,
+  stripControlChars,
+} from "@/lib/subscriptions-csv";
 
 type View = "idle" | "subscriptions" | "transfer" | "migrating" | "done";
 interface Account { token: string; email: string; name: string; picture: string; }
@@ -122,7 +126,8 @@ export default function Index() {
           if (saved?.subscriptions && saved.subscriptions.length > 0) {
             const subs = saved.subscriptions.map((s) => ({
               channelId: s.channelId,
-              title: s.title,
+              // 과거 버전이 저장한 제어 문자 포함 제목도 복원 시 정화
+              title: stripControlChars(s.title),
               thumbnail: s.thumbnail ?? "",
               status: (s.status ?? "pending") as ChannelStatus,
             }));

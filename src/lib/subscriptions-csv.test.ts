@@ -33,6 +33,16 @@ describe("parseSubscriptionsCsv", () => {
     expect(() => parseSubscriptionsCsv("name,url\nA,https://example.com"))
       .toThrow("csv:missingChannelId");
   });
+
+  it("strips control characters that garble titles (Takeout 0x08 case)", () => {
+    const csv = [
+      "Channel Id,Channel Url,Channel Title",
+      "UCT3CumbFIJiW33uq0UI3zlg,http://www.youtube.com/channel/UCT3CumbFIJiW33uq0UI3zlg,\b고기남자",
+    ].join("\n");
+
+    const { subscriptions } = parseSubscriptionsCsv(csv);
+    expect(subscriptions[0].title).toBe("고기남자");
+  });
 });
 
 describe("toSubscriptionsCsv", () => {
