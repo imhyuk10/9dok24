@@ -69,7 +69,30 @@ async function refreshAccessToken(refreshToken: string): Promise<string> {
 }
 
 // ── API 에러 헬퍼 ────────────────────────────────────────────────────────────────
-function isAccountSuspended(errData: any): boolean {
+// YouTube Data API 응답/에러의 최소 형태 — 실제로 읽는 필드만 정의
+interface YoutubeApiError {
+  error?: { message?: string; errors?: Array<{ reason?: string }> };
+}
+
+interface ChannelsResponse {
+  items?: Array<{
+    id?: string;
+    snippet?: { title?: string; thumbnails?: { default?: { url?: string } } };
+  }>;
+}
+
+interface SubscriptionsResponse {
+  items?: Array<{
+    snippet: {
+      title: string;
+      resourceId: { channelId: string };
+      thumbnails?: { default?: { url?: string } };
+    };
+  }>;
+  nextPageToken?: string;
+}
+
+function isAccountSuspended(errData: YoutubeApiError | null): boolean {
   const reason = errData?.error?.errors?.[0]?.reason ?? "";
   const message: string = errData?.error?.message ?? "";
   return reason === "accountSuspended" || message.toLowerCase().includes("suspended");
@@ -221,13 +244,13 @@ async function doOAuth(scope: string, role: "source" | "dest") {
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
   if (!chResp.ok) {
-    const errData = await chResp.json().catch(() => null) as any;
+    const errData = await chResp.json().catch(() => null) as YoutubeApiError | null;
     if (isAccountSuspended(errData)) throw new Error("error:accountSuspended");
     const msg = errData?.error?.message ?? `HTTP ${chResp.status}`;
     console.error("[channels]", chResp.status, msg);
     throw new Error(`채널 정보 조회 실패: ${msg}`);
   }
-  const chData = await chResp.json() as any;
+  const chData = await chResp.json() as ChannelsResponse;
   const ch = chData.items?.[0];
 
   const email = ch?.snippet?.title ?? "YouTube User";
@@ -262,12 +285,12 @@ async function fetchSubscriptions(token: string) {
     });
 
     if (!resp.ok) {
-      const err = await resp.json() as any;
+      const err = await resp.json() as YoutubeApiError;
       if (isAccountSuspended(err)) throw new Error("error:accountSuspended");
       throw new Error(err?.error?.message ?? "구독 목록 조회 실패");
     }
 
-    const data = await resp.json() as any;
+    const data = await resp.json() as SubscriptionsResponse;
     for (const item of data.items ?? []) {
       subs.push({
         channelId: item.snippet.resourceId.channelId,
@@ -301,7 +324,7 @@ async function fetchChannelThumbnails(token: string, channelIds: string[]) {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!resp.ok) continue; // 배치 실패는 건너뜀 — 썸네일은 부가 정보
-      const data = await resp.json() as any;
+      const data = await resp.json() as ChannelsResponse;
       for (const item of data.items ?? []) {
         if (!item?.id) continue;
         const url = item?.snippet?.thumbnails?.default?.url ?? "";
@@ -344,7 +367,7 @@ async function migrateSubscriptions(
       });
 
       if (!resp.ok) {
-        const err = await resp.json() as any;
+        const err = await resp.json() as YoutubeApiError;
         const reason = err?.error?.errors?.[0]?.reason ?? "";
         if (reason === "subscriptionDuplicate") result = "already";
         else if (reason === "quotaExceeded" || resp.status === 429) {
